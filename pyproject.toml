@@ -1,7 +1,10 @@
 [project]
 name = "invoicepilot-lite"
 version = "0.1.0"
-description = "Add your description here"
+description = "自动读取PDF发票并提取金额信息进行文件重命名的工具"
 readme = "README.md"
 requires-python = ">=3.8"
-dependencies = []
+dependencies = [
+    "pdfplumber>=0.10.0",
+    "pyinstaller>=6.14.1",
+]
