@@ -17,12 +17,14 @@ def build_executable():
         'main.py',                    # 主程序文件
         '--onefile',                  # 打包成单个文件
         '--name=InvoicePilot',        # 可执行文件名称
-        '--windowed',                 # Windows下隐藏控制台窗口（可选）
+        '--console',                  # 保留控制台窗口（适合命令行应用）
         '--clean',                    # 清理临时文件
         '--distpath=./dist',          # 输出目录
         '--workpath=./build',         # 工作目录
         '--specpath=./build',         # spec文件目录
-        '--add-data=README.md;.',     # 包含README文件（可选）
+        '--hidden-import=pdfplumber', # 强制包含pdfplumber
+        '--hidden-import=pdfminer',   # 强制包含pdfminer
+        '--hidden-import=PIL',        # 强制包含PIL
         '--icon=icon.ico',            # 图标文件（如果有的话）
     ]
     

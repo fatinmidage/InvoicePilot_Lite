@@ -56,6 +56,9 @@ ENV/
 env.bak/
 venv.bak/
 
+# Python version management
+.python-version
+
 # IDE
 .vscode/
 .idea/
@@ -83,3 +86,32 @@ logs/
 
 # uv
 .uv/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pipenv
+Pipfile.lock
+
+# poetry
+poetry.lock
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
+# Cython debug symbols
+cython_debug/

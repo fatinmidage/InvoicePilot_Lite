@@ -3,6 +3,7 @@
 """
 InvoicePilot Lite - 自动读取PDF发票并提取金额信息进行文件重命名的工具
 自动处理当前目录下的所有PDF发票文件
+智能判定PDF文件是否为发票（基于"发票号码"关键词识别）
 """
 
 import pdfplumber
@@ -67,6 +68,19 @@ class InvoiceProcessor:
             print(f"读取PDF文件时出错: {e}")
             return ""
     
+    def is_invoice_pdf(self, text: str) -> bool:
+        """
+        判断PDF文件是否为发票文件
+        
+        Args:
+            text: PDF文件的文本内容
+            
+        Returns:
+            如果包含"发票号码"关键词则返回True，否则返回False
+        """
+        # 检查文本中是否包含"发票号码"关键词
+        return "发票号码" in text
+    
     def extract_amount(self, text: str) -> Optional[float]:
         """
         从文本中提取金额
@@ -96,7 +110,7 @@ class InvoiceProcessor:
         
         return None
     
-    def process_invoice(self, pdf_path: Path) -> Tuple[bool, str]:
+    def process_invoice(self, pdf_path: Path) -> Tuple[str, str]:
         """
         处理单个发票文件
         
@@ -104,25 +118,29 @@ class InvoiceProcessor:
             pdf_path: PDF文件路径
             
         Returns:
-            (成功标志, 消息)
+            (处理状态, 消息) - 状态可以是 'success', 'failed', 'skipped'
         """
         if not pdf_path.exists():
-            return False, f"文件不存在: {pdf_path}"
+            return "failed", f"文件不存在: {pdf_path}"
         
         if not pdf_path.suffix.lower() == '.pdf':
-            return False, f"不是PDF文件: {pdf_path}"
+            return "failed", f"不是PDF文件: {pdf_path}"
         
         print(f"正在处理: {pdf_path.name}")
         
         # 提取文本
         text = self.extract_text_from_pdf(str(pdf_path))
         if not text:
-            return False, f"无法从PDF中提取文本: {pdf_path.name}"
+            return "failed", f"无法从PDF中提取文本: {pdf_path.name}"
+        
+        # 检查是否为发票文件
+        if not self.is_invoice_pdf(text):
+            return "skipped", f"非发票文件（不包含'发票号码'关键词）: {pdf_path.name}"
         
         # 提取金额
         amount = self.extract_amount(text)
         if amount is None:
-            return False, f"无法从PDF中提取金额: {pdf_path.name}"
+            return "failed", f"无法从PDF中提取金额: {pdf_path.name}"
         
         # 生成新文件名
         new_filename = f"{amount:.2f}元_发票.pdf"
@@ -139,9 +157,9 @@ class InvoiceProcessor:
         try:
             # 重命名文件
             pdf_path.rename(output_path)
-            return True, f"成功重命名: {pdf_path.name} -> {output_path.name}"
+            return "success", f"成功重命名: {pdf_path.name} -> {output_path.name}"
         except Exception as e:
-            return False, f"重命名文件时出错: {e}"
+            return "failed", f"重命名文件时出错: {e}"
     
     def process_current_directory(self) -> None:
         """
@@ -167,22 +185,29 @@ class InvoiceProcessor:
         
         success_count = 0
         failed_count = 0
+        skipped_count = 0
         
         for pdf_file in pdf_files:
-            success, message = self.process_invoice(pdf_file)
-            if success:
+            status, message = self.process_invoice(pdf_file)
+            if status == "success":
                 success_count += 1
                 print(f"✓ {message}")
-            else:
+            elif status == "skipped":
+                skipped_count += 1
+                print(f"⚠ {message}")
+            else:  # failed
                 failed_count += 1
                 print(f"✗ {message}")
             print("-" * 40)
         
         print("=" * 60)
-        print(f"处理完成: 成功 {success_count} 个，失败 {failed_count} 个")
+        print(f"处理完成: 成功 {success_count} 个，跳过 {skipped_count} 个，失败 {failed_count} 个")
         
         if success_count > 0:
             print(f"已重命名的文件保存在: {current_dir}")
+        
+        if skipped_count > 0:
+            print(f"跳过了 {skipped_count} 个非发票PDF文件（不包含'发票号码'关键词）")
         
         # 等待用户按键退出（嵌入式环境）
         if getattr(sys, 'frozen', False):
@@ -195,6 +220,10 @@ class InvoiceProcessor:
         print("功能: 自动读取当前目录下的PDF发票，提取金额信息并重命名文件")
         print("使用方法: 将程序放在包含PDF发票的目录中，双击运行即可")
         print("重命名格式: 金额元_发票.pdf (例如: 100.00元_发票.pdf)")
+        print()
+        print("发票识别: 程序会检查PDF文件是否包含'发票号码'关键词")
+        print("         只有包含该关键词的文件才会被识别为发票并处理")
+        print("         非发票文件会被自动跳过，不会重命名")
         print("=" * 50)
 
 
